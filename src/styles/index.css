@@ -134,6 +134,7 @@ input, textarea, select {
 .map-page .map { margin-top: 14px; border: 2px solid var(--ink); border-radius: 18px; }
 
 /* Map internals */
+.leaflet-tile-pane { filter: grayscale(0.9) contrast(0.95) brightness(1.04); }
 .map { width: 100%; position: relative; z-index: 0; background: #e6ebe7; }
 .leaflet-container { font-family: var(--body); }
 .leaflet-popup-content-wrapper { border-radius: 10px; border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }

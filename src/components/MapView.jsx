@@ -21,10 +21,10 @@ export default function MapView({ issues = [], height = 480, onPick, picked, scr
   // Create the map once
   useEffect(() => {
     const map = L.map(elRef.current, { center: DURBAN, zoom: 12, scrollWheelZoom: scrollZoom });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      maxZoom: 19,
-    }).addTo(map);
+       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+     attribution: '&copy; OpenStreetMap contributors',
+     maxZoom: 19,
+   }).addTo(map);
     layerRef.current = L.layerGroup().addTo(map);
     map.on('click', (e) => {
       if (onPickRef.current) onPickRef.current({ lat: e.latlng.lat, lng: e.latlng.lng });
