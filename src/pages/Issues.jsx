@@ -1,18 +1,80 @@
-import IssueCard from '../components/IssueCard';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import IssueRow from '../components/IssueRow';
+import { CATEGORIES, STATUSES, SEVERITIES } from '../utils/constants';
 
-export default function Issues({ issues }) {
+export default function Issues({ issues, confirmedIds, onConfirm }) {
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All');
+  const [status, setStatus] = useState('All');
+  const [sort, setSort] = useState('newest');
+
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = issues.filter(
+      (i) =>
+        (category === 'All' || i.category === category) &&
+        (status === 'All' || i.status === status) &&
+        (!q || (i.title + ' ' + i.description + ' ' + i.location + ' ' + i.id).toLowerCase().includes(q))
+    );
+    list.sort((a, b) => {
+      if (sort === 'confirmed') return b.confirmations - a.confirmations;
+      if (sort === 'severity') return SEVERITIES.indexOf(b.severity) - SEVERITIES.indexOf(a.severity);
+      return b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id);
+    });
+    return list;
+  }, [issues, query, category, status, sort]);
+
   return (
-    <section>
-      <h1>Reported problems</h1>
-      {issues.length === 0 ? (
-        <p>No problems reported yet.</p>
-      ) : (
-        <div className="grid">
-          {issues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
-          ))}
+    <>
+      <section className="container page-head">
+        <h1>Reported problems</h1>
+        <p className="lead">Confirm the ones you can see for yourself. Confirmed reports rise to the top.</p>
+      </section>
+
+      <section className="container">
+        <div className="filters">
+          <input
+            type="search"
+            placeholder="Search by title, area or report number"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Search problems"
+          />
+          <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by type">
+            <option value="All">All types</option>
+            {CATEGORIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
+            <option value="All">All statuses</option>
+            {STATUSES.map((s) => <option key={s}>{s}</option>)}
+          </select>
+          <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
+            <option value="newest">Newest first</option>
+            <option value="confirmed">Most confirmed</option>
+            <option value="severity">Highest severity</option>
+          </select>
         </div>
-      )}
-    </section>
+
+        <p className="fine">Showing {shown.length} of {issues.length} problems.</p>
+
+        {shown.length === 0 ? (
+          <div className="notice">
+            <p>No problems match these filters. Clear the search, or <Link to="/report">report a new problem</Link>.</p>
+          </div>
+        ) : (
+          <div className="list">
+            {shown.map((issue) => (
+              <IssueRow
+                key={issue.id}
+                issue={issue}
+                confirmed={confirmedIds.includes(issue.id)}
+                onConfirm={onConfirm}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </>
   );
 }

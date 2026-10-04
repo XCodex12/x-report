@@ -1,66 +1,144 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import MapView from '../components/MapView';
 import { CATEGORIES, SEVERITIES } from '../utils/constants';
+import { distanceMeters } from '../utils/geo';
 
-const emptyForm = {
-  title: '',
-  description: '',
-  category: CATEGORIES[0],
-  severity: SEVERITIES[1],
-  location: '',
-};
-
-export default function ReportProblem({ onAddIssue }) {
-  const [form, setForm] = useState(emptyForm);
+export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConfirm }) {
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    category: CATEGORIES[0].name,
+    severity: 'Medium',
+    location: '',
+  });
+  const [picked, setPicked] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const nearby = useMemo(() => {
+    if (!picked) return [];
+    return issues
+      .filter((i) => i.category === form.category && i.status !== 'Resolved')
+      .map((issue) => ({ issue, dist: distanceMeters(picked, issue) }))
+      .filter((x) => x.dist <= 200)
+      .sort((a, b) => a.dist - b.dist);
+  }, [issues, picked, form.category]);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.title.trim() || !form.description.trim() || !form.location.trim()) {
-      setError('Please fill in the title, description and location.');
+  function locateMe() {
+    if (!navigator.geolocation) {
+      setError('Your browser does not support location. Click the map to place your pin.');
       return;
     }
-    onAddIssue(form);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setError('');
+        setPicked({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
+      () => setError('Could not get your location. Click the map to place your pin instead.')
+    );
+  }
+
+  function confirmExisting(id) {
+    if (!confirmedIds.includes(id)) onConfirm(id);
+    navigate('/issues');
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.title.trim() || !form.description.trim()) {
+      setError('Add a title and a description.');
+      return;
+    }
+    if (!picked) {
+      setError('Click the map to place a pin where the problem is.');
+      return;
+    }
+    onAddIssue({
+      ...form,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      location: form.location.trim() || 'Pinned location',
+      lat: picked.lat,
+      lng: picked.lng,
+    });
     navigate('/issues');
   }
 
   return (
-    <section>
-      <h1>Report a problem</h1>
-      <form onSubmit={handleSubmit} className="form">
-        {error && <p className="error">{error}</p>}
+    <>
+      <section className="container page-head">
+        <h1>Report a problem</h1>
+        <p className="lead">Pin it on the map, describe it, and we'll check whether it's already been reported.</p>
+      </section>
 
-        <label>Title
-          <input name="title" value={form.title} onChange={handleChange} />
-        </label>
+      <section className="container split">
+        <form onSubmit={handleSubmit} className="form">
+          {error && <div className="notice notice-error" role="alert">{error}</div>}
 
-        <label>Description
-          <textarea name="description" rows="4" value={form.description} onChange={handleChange} />
-        </label>
+          <label>
+            Title
+            <input name="title" value={form.title} onChange={handleChange} placeholder="Deep pothole in the left lane" />
+          </label>
 
-        <label>Location
-          <input name="location" value={form.location} onChange={handleChange} />
-        </label>
+          <label>
+            What's wrong?
+            <textarea name="description" rows="4" value={form.description} onChange={handleChange} />
+          </label>
 
-        <label>Category
-          <select name="category" value={form.category} onChange={handleChange}>
-            {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-          </select>
-        </label>
+          <div className="row">
+            <label>
+              Type
+              <select name="category" value={form.category} onChange={handleChange}>
+                {CATEGORIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+              </select>
+            </label>
+            <label>
+              Severity
+              <select name="severity" value={form.severity} onChange={handleChange}>
+                {SEVERITIES.map((s) => <option key={s}>{s}</option>)}
+              </select>
+            </label>
+          </div>
 
-        <label>Severity
-          <select name="severity" value={form.severity} onChange={handleChange}>
-            {SEVERITIES.map((s) => <option key={s}>{s}</option>)}
-          </select>
-        </label>
+          <label>
+            Area or landmark <span className="hint">(optional)</span>
+            <input name="location" value={form.location} onChange={handleChange} placeholder="Next to the Spar, Durban North" />
+          </label>
 
-        <button type="submit" className="btn">Submit report</button>
-      </form>
-    </section>
+          {nearby.length > 0 && (
+            <div className="notice notice-warn">
+              <strong>This may already be reported</strong>
+              <p>Open {form.category.toLowerCase()} problems within 200 m of your pin:</p>
+              {nearby.map(({ issue, dist }) => (
+                <div className="dup" key={issue.id}>
+                  <span>{issue.title}, {Math.round(dist)} m away</span>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => confirmExisting(issue.id)}>
+                    Confirm this one
+                  </button>
+                </div>
+              ))}
+              <p className="fine">If yours is a different problem, submit as normal.</p>
+            </div>
+          )}
+
+          <button type="submit" className="btn">Submit report</button>
+        </form>
+
+        <div>
+          <div className="map-tools">
+            <button type="button" className="btn btn-outline btn-sm" onClick={locateMe}>Use my location</button>
+            <span className="pick-readout">
+              {picked ? `Pin placed at ${picked.lat.toFixed(5)}, ${picked.lng.toFixed(5)}` : 'Or click the map to place your pin.'}
+            </span>
+          </div>
+          <MapView issues={issues} height={460} onPick={setPicked} picked={picked} scrollZoom />
+        </div>
+      </section>
+    </>
   );
 }
