@@ -1,0 +1,63 @@
+:root {
+  --bg: #f6f7fb;
+  --text: #1f2430;
+  --card: #ffffff;
+  --primary: #2563eb;
+  --border: #e3e6ee;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+.navbar {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 8px;
+  padding: 14px 24px; background: var(--card); border-bottom: 1px solid var(--border);
+}
+.navbar nav { display: flex; gap: 16px; }
+.navbar a { color: var(--text); text-decoration: none; }
+.navbar a.active { color: var(--primary); font-weight: 600; }
+.brand { font-weight: 800; font-size: 1.2rem; }
+
+.lead { font-size: 1.1rem; color: #4b5263; }
+
+.btn {
+  display: inline-block; padding: 10px 18px; border: 0; border-radius: 8px;
+  background: var(--primary); color: #fff; font-size: 1rem; cursor: pointer;
+  text-decoration: none;
+}
+
+.stats { display: flex; gap: 16px; margin-top: 32px; flex-wrap: wrap; }
+.stat {
+  flex: 1; min-width: 140px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; display: flex; flex-direction: column;
+}
+.stat strong { font-size: 2rem; }
+
+.grid { display: grid; gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.card h3 { margin: 8px 0; }
+.card-top { display: flex; justify-content: space-between; align-items: center; }
+.issue-id { font-family: monospace; color: #6b7285; }
+.meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: #4b5263; }
+
+.badge { padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; background: #e5e7eb; }
+.badge-verified { background: #dbeafe; }
+.badge-assigned { background: #ede9fe; }
+.badge-being-fixed { background: #fef3c7; }
+.badge-resolved { background: #dcfce7; }
+
+.form { display: flex; flex-direction: column; gap: 14px; max-width: 520px; }
+.form label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.form input, .form textarea, .form select {
+  padding: 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit;
+}
+.error { color: #b91c1c; margin: 0; }
