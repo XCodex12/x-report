@@ -15,6 +15,7 @@ function fromRow(r) {
     status: r.status,
     confirmations: r.confirmations,
     createdAt: r.created_at.slice(0, 10),
+    resolvedAt: r.resolved_at,
     demo: r.is_demo,
   };
 }
@@ -56,4 +57,24 @@ export async function toggleConfirmation(dbId) {
   const { data, error } = await supabase.rpc('toggle_confirmation', { p_issue_id: dbId });
   if (error) throw error;
   return data; // { confirmed: boolean, count: number }
+}
+
+export async function fetchHistory(dbId) {
+  const { data, error } = await supabase
+    .from('status_history')
+    .select('id, status, note, created_at')
+    .eq('issue_id', dbId)
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function setIssueStatus(dbId, status, note) {
+  const { error } = await supabase.rpc('set_issue_status', {
+    p_issue_id: dbId,
+    p_status: status,
+    p_note: note || null,
+  });
+  if (error) throw error;
 }

@@ -7,7 +7,15 @@ import { DURBAN } from '../utils/geo';
 const esc = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-export default function MapView({ issues = [], height = 480, onPick, picked, scrollZoom = false }) {
+export default function MapView({
+  issues = [],
+  height = 480,
+  onPick,
+  picked,
+  scrollZoom = false,
+  center,
+  zoom = 12,
+}) {
   const elRef = useRef(null);
   const mapRef = useRef(null);
   const layerRef = useRef(null);
@@ -20,11 +28,15 @@ export default function MapView({ issues = [], height = 480, onPick, picked, scr
 
   // Create the map once
   useEffect(() => {
-    const map = L.map(elRef.current, { center: DURBAN, zoom: 12, scrollWheelZoom: scrollZoom });
-       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-     attribution: '&copy; OpenStreetMap contributors',
-     maxZoom: 19,
-   }).addTo(map);
+    const map = L.map(elRef.current, {
+      center: center || DURBAN,
+      zoom,
+      scrollWheelZoom: scrollZoom,
+    });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
     layerRef.current = L.layerGroup().addTo(map);
     map.on('click', (e) => {
       if (onPickRef.current) onPickRef.current({ lat: e.latlng.lat, lng: e.latlng.lng });
@@ -36,6 +48,7 @@ export default function MapView({ issues = [], height = 480, onPick, picked, scr
       layerRef.current = null;
       pickMarkerRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollZoom]);
 
   // Draw the issue pins

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 import { categoryMeta, STATUSES } from '../utils/constants';
 
@@ -26,7 +27,7 @@ export default function IssueRow({ issue, confirmed, isOwn, onConfirm }) {
 
       <div className="issue-body">
         <div className="issue-head">
-          <h3>{issue.title}</h3>
+          <h3><Link to={'/issues/' + issue.id}>{issue.title}</Link></h3>
           <StatusBadge status={issue.status} />
         </div>
         <p>{issue.description}</p>
