@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import RequireAuth from './components/RequireAuth';
 import Home from './pages/Home';
 import MapPage from './pages/MapPage';
 import Issues from './pages/Issues';
 import Insights from './pages/Insights';
 import ReportProblem from './pages/ReportProblem';
+import AuthPage from './pages/AuthPage';
+import { useAuth } from './context/AuthContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import { fetchIssues, fetchMyConfirmations, createIssue, toggleConfirmation } from './lib/api';
 
@@ -19,11 +22,16 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [issues, setIssues] = useState([]);
   const [confirmedIds, setConfirmedIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
+  // Load the public reports once
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setLoadError('The database connection is not set up. Add the Supabase environment variables and redeploy.');
@@ -31,11 +39,10 @@ export default function App() {
       return;
     }
     let cancelled = false;
-    Promise.all([fetchIssues(), fetchMyConfirmations().catch(() => [])])
-      .then(([loadedIssues, mine]) => {
+    fetchIssues()
+      .then((loadedIssues) => {
         if (cancelled) return;
         setIssues(loadedIssues);
-        setConfirmedIds(mine);
         setLoading(false);
       })
       .catch((err) => {
@@ -48,6 +55,23 @@ export default function App() {
       cancelled = true;
     };
   }, []);
+
+  // Load this person's confirmations whenever they log in or out
+  useEffect(() => {
+    if (!user) {
+      setConfirmedIds([]);
+      return;
+    }
+    let cancelled = false;
+    fetchMyConfirmations()
+      .then((mine) => {
+        if (!cancelled) setConfirmedIds(mine);
+      })
+      .catch((err) => console.error(err));
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   async function addIssue(data) {
     const created = await createIssue(data);
@@ -62,8 +86,13 @@ export default function App() {
   }
 
   async function confirmIssue(id) {
+    if (!user) {
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
     const issue = issues.find((i) => i.id === id);
-    if (!issue) return;
+    if (!issue || issue.userId === user.id) return;
+
     const wasConfirmed = confirmedIds.includes(id);
     applyConfirmation(id, !wasConfirmed, Math.max(0, issue.confirmations + (wasConfirmed ? -1 : 1)));
     try {
@@ -94,9 +123,15 @@ export default function App() {
             <Route path="/map" element={<MapPage issues={issues} />} />
             <Route path="/issues" element={<Issues issues={issues} confirmedIds={confirmedIds} onConfirm={confirmIssue} />} />
             <Route path="/insights" element={<Insights issues={issues} />} />
+            <Route path="/login" element={<AuthPage mode="login" />} />
+            <Route path="/signup" element={<AuthPage mode="signup" />} />
             <Route
               path="/report"
-              element={<ReportProblem issues={issues} confirmedIds={confirmedIds} onAddIssue={addIssue} onConfirm={confirmIssue} />}
+              element={
+                <RequireAuth>
+                  <ReportProblem issues={issues} confirmedIds={confirmedIds} onAddIssue={addIssue} onConfirm={confirmIssue} />
+                </RequireAuth>
+              }
             />
           </Routes>
         )}

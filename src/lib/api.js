@@ -1,25 +1,10 @@
 import { supabase } from './supabaseClient';
 
-let memoryDeviceId = null;
-
-export function getDeviceId() {
-  try {
-    let id = localStorage.getItem('xr-device-id');
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem('xr-device-id', id);
-    }
-    return id;
-  } catch {
-    if (!memoryDeviceId) memoryDeviceId = crypto.randomUUID();
-    return memoryDeviceId;
-  }
-}
-
 function fromRow(r) {
   return {
     id: 'XR-' + r.id,
     dbId: r.id,
+    userId: r.user_id,
     title: r.title,
     description: r.description,
     category: r.category,
@@ -44,7 +29,7 @@ export async function fetchIssues() {
 }
 
 export async function fetchMyConfirmations() {
-  const { data, error } = await supabase.rpc('my_confirmations', { p_device_id: getDeviceId() });
+  const { data, error } = await supabase.rpc('my_confirmations');
   if (error) throw error;
   return (data || []).map((n) => 'XR-' + n);
 }
@@ -68,10 +53,7 @@ export async function createIssue(input) {
 }
 
 export async function toggleConfirmation(dbId) {
-  const { data, error } = await supabase.rpc('toggle_confirmation', {
-    p_issue_id: dbId,
-    p_device_id: getDeviceId(),
-  });
+  const { data, error } = await supabase.rpc('toggle_confirmation', { p_issue_id: dbId });
   if (error) throw error;
   return data; // { confirmed: boolean, count: number }
 }
