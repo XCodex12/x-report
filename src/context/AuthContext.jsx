@@ -6,6 +6,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -21,6 +22,22 @@ export function AuthProvider({ children }) {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  const userId = session?.user?.id;
+
+  useEffect(() => {
+    if (!supabase || !userId) {
+      setIsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    supabase.rpc('is_admin').then(({ data, error }) => {
+      if (!cancelled) setIsAdmin(!error && data === true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   async function signUp(email, password) {
     const { data, error } = await supabase.auth.signUp({
@@ -41,7 +58,7 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut();
   }
 
-  const value = { user: session?.user ?? null, authLoading, signUp, signIn, signOut };
+  const value = { user: session?.user ?? null, isAdmin, authLoading, signUp, signIn, signOut };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

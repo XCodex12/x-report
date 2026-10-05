@@ -6,6 +6,7 @@ import RequireAuth from './components/RequireAuth';
 import Home from './pages/Home';
 import MapPage from './pages/MapPage';
 import Issues from './pages/Issues';
+import IssueDetail from './pages/IssueDetail';
 import Insights from './pages/Insights';
 import ReportProblem from './pages/ReportProblem';
 import AuthPage from './pages/AuthPage';
@@ -104,6 +105,16 @@ export default function App() {
     }
   }
 
+  function changeStatus(id, status) {
+    setIssues((current) =>
+      current.map((i) =>
+        i.id === id
+          ? { ...i, status, resolvedAt: status === 'Resolved' ? i.resolvedAt || new Date().toISOString() : null }
+          : i
+      )
+    );
+  }
+
   return (
     <>
       <ScrollToTop />
@@ -122,6 +133,17 @@ export default function App() {
             <Route path="/" element={<Home issues={issues} />} />
             <Route path="/map" element={<MapPage issues={issues} />} />
             <Route path="/issues" element={<Issues issues={issues} confirmedIds={confirmedIds} onConfirm={confirmIssue} />} />
+            <Route
+              path="/issues/:id"
+              element={
+                <IssueDetail
+                  issues={issues}
+                  confirmedIds={confirmedIds}
+                  onConfirm={confirmIssue}
+                  onStatusChange={changeStatus}
+                />
+              }
+            />
             <Route path="/insights" element={<Insights issues={issues} />} />
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/signup" element={<AuthPage mode="signup" />} />

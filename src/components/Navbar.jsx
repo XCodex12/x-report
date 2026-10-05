@@ -2,7 +2,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   return (
     <header className="nav">
@@ -20,6 +20,7 @@ export default function Navbar() {
         <div className="nav-actions">
           {user ? (
             <>
+              {isAdmin && <span className="tag tag-live">Admin</span>}
               <span className="nav-user" title={user.email}>{user.email}</span>
               <button type="button" className="link-btn" onClick={signOut}>Log out</button>
             </>
