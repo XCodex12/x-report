@@ -1,9 +1,13 @@
 import StatusBadge from './StatusBadge';
 import { categoryMeta, STATUSES } from '../utils/constants';
 
-export default function IssueRow({ issue, confirmed, onConfirm }) {
+export default function IssueRow({ issue, confirmed, isOwn, onConfirm }) {
   const meta = categoryMeta(issue.category);
   const step = STATUSES.indexOf(issue.status);
+
+  let label = 'Confirm';
+  if (isOwn) label = 'Yours';
+  else if (confirmed) label = 'Confirmed';
 
   return (
     <article className="issue" style={{ '--c': meta.color }}>
@@ -11,11 +15,13 @@ export default function IssueRow({ issue, confirmed, onConfirm }) {
         type="button"
         className={'confirm' + (confirmed ? ' is-on' : '')}
         onClick={() => onConfirm(issue.id)}
+        disabled={isOwn}
         aria-pressed={confirmed}
-        aria-label={confirmed ? 'Remove your confirmation' : 'Confirm this problem'}
+        title={isOwn ? 'You cannot confirm your own report' : undefined}
+        aria-label={isOwn ? 'Your own report' : confirmed ? 'Remove your confirmation' : 'Confirm this problem'}
       >
         <span className="confirm-count">{issue.confirmations}</span>
-        <span className="confirm-label">{confirmed ? 'Confirmed' : 'Confirm'}</span>
+        <span className="confirm-label">{label}</span>
       </button>
 
       <div className="issue-body">

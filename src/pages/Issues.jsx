@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import IssueRow from '../components/IssueRow';
+import { useAuth } from '../context/AuthContext';
 import { CATEGORIES, STATUSES, SEVERITIES } from '../utils/constants';
 
 export default function Issues({ issues, confirmedIds, onConfirm }) {
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const [status, setStatus] = useState('All');
   const [sort, setSort] = useState('newest');
+  const [mineOnly, setMineOnly] = useState(false);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -15,6 +18,7 @@ export default function Issues({ issues, confirmedIds, onConfirm }) {
       (i) =>
         (category === 'All' || i.category === category) &&
         (status === 'All' || i.status === status) &&
+        (!mineOnly || (user && i.userId === user.id)) &&
         (!q || (i.title + ' ' + i.description + ' ' + i.location + ' ' + i.id).toLowerCase().includes(q))
     );
     list.sort((a, b) => {
@@ -23,7 +27,7 @@ export default function Issues({ issues, confirmedIds, onConfirm }) {
       return b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id);
     });
     return list;
-  }, [issues, query, category, status, sort]);
+  }, [issues, query, category, status, sort, mineOnly, user]);
 
   return (
     <>
@@ -54,6 +58,12 @@ export default function Issues({ issues, confirmedIds, onConfirm }) {
             <option value="confirmed">Most confirmed</option>
             <option value="severity">Highest severity</option>
           </select>
+          {user && (
+            <label className="check">
+              <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} />
+              Only my reports
+            </label>
+          )}
         </div>
 
         <p className="fine">Showing {shown.length} of {issues.length} problems.</p>
@@ -69,6 +79,7 @@ export default function Issues({ issues, confirmedIds, onConfirm }) {
                 key={issue.id}
                 issue={issue}
                 confirmed={confirmedIds.includes(issue.id)}
+                isOwn={Boolean(user && issue.userId === user.id)}
                 onConfirm={onConfirm}
               />
             ))}
