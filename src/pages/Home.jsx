@@ -47,8 +47,8 @@ export default function Home({ issues }) {
         </p>
         {isDemo && (
           <p className="fine">
-            This is demo data for Durban. Reports you add are saved only in this browser until the
-            shared database is connected.
+            Some of the reports shown are sample data for Durban. Reports you add are real and
+            visible to everyone.
           </p>
         )}
       </section>
