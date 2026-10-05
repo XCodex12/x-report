@@ -14,6 +14,7 @@ export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConf
   });
   const [picked, setPicked] = useState(null);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const nearby = useMemo(() => {
@@ -48,25 +49,39 @@ export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConf
     navigate('/issues');
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.title.trim() || !form.description.trim()) {
-      setError('Add a title and a description.');
+    const title = form.title.trim();
+    const description = form.description.trim();
+    if (title.length < 3 || title.length > 120) {
+      setError('The title needs 3 to 120 characters.');
+      return;
+    }
+    if (description.length < 5 || description.length > 1000) {
+      setError('The description needs 5 to 1000 characters.');
       return;
     }
     if (!picked) {
       setError('Click the map to place a pin where the problem is.');
       return;
     }
-    onAddIssue({
-      ...form,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      location: form.location.trim() || 'Pinned location',
-      lat: picked.lat,
-      lng: picked.lng,
-    });
-    navigate('/issues');
+    setSubmitting(true);
+    setError('');
+    try {
+      await onAddIssue({
+        ...form,
+        title,
+        description,
+        location: form.location.trim().slice(0, 120) || 'Pinned location',
+        lat: picked.lat,
+        lng: picked.lng,
+      });
+      navigate('/issues');
+    } catch (err) {
+      console.error(err);
+      setError('Could not submit your report. Check your connection and try again.');
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -126,7 +141,9 @@ export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConf
             </div>
           )}
 
-          <button type="submit" className="btn">Submit report</button>
+          <button type="submit" className="btn" disabled={submitting}>
+            {submitting ? 'Submitting...' : 'Submit report'}
+          </button>
         </form>
 
         <div>
