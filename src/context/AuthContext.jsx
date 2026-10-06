@@ -58,7 +58,28 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut();
   }
 
-  const value = { user: session?.user ?? null, isAdmin, authLoading, signUp, signIn, signOut };
+  async function requestPasswordReset(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset-password',
+    });
+    if (error) throw error;
+  }
+
+  async function updatePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  }
+
+  const value = {
+    user: session?.user ?? null,
+    isAdmin,
+    authLoading,
+    signUp,
+    signIn,
+    signOut,
+    requestPasswordReset,
+    updatePassword,
+  };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

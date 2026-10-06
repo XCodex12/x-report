@@ -10,6 +10,7 @@ export default function AuthPage({ mode }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
@@ -27,6 +28,10 @@ export default function AuthPage({ mode }) {
     }
     if (isSignup && password.length < 8) {
       setError('Use a password with at least 8 characters.');
+      return;
+    }
+    if (isSignup && !agreed) {
+      setError('Please confirm that you have read the privacy policy.');
       return;
     }
     setBusy(true);
@@ -82,11 +87,26 @@ export default function AuthPage({ mode }) {
               />
             </label>
 
+            {isSignup && (
+              <label className="consent">
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+                <span>
+                  I have read the <Link to="/privacy" target="_blank">privacy policy</Link> and understand that
+                  my reports are public.
+                </span>
+              </label>
+            )}
+
             <button type="submit" className="btn" disabled={busy}>
               {busy ? 'Please wait...' : isSignup ? 'Create account' : 'Log in'}
             </button>
           </form>
 
+          {!isSignup && (
+            <p className="auth-switch">
+              <Link to="/forgot-password">Forgot your password?</Link>
+            </p>
+          )}
           <p className="auth-switch">
             {isSignup ? 'Already have an account? ' : 'New here? '}
             <Link to={isSignup ? '/login' : '/signup'} state={location.state}>

@@ -230,3 +230,12 @@ input, textarea, select {
 @media (max-width: 900px) {
   .detail { grid-template-columns: 1fr; }
 }
+
+/* Policy pages and consent */
+.prose { max-width: 68ch; padding-bottom: 72px; }
+.prose h2 { font-size: 1.4rem; margin: 36px 0 10px; }
+.prose ul { padding-left: 1.2rem; margin: 10px 0 0; }
+.prose li { margin-bottom: 8px; }
+.form .consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; }
+.form .consent input { width: auto; margin-top: 5px; }
+.footer-inner a { color: var(--ink); margin-right: 14px; }

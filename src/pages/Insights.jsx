@@ -19,11 +19,24 @@ function Bars({ rows }) {
   );
 }
 
+function formatDays(days) {
+  if (days < 1) return 'Under 1 day';
+  return days.toFixed(1) + ' days';
+}
+
 export default function Insights({ issues }) {
   const total = issues.length;
   const resolved = issues.filter((i) => i.status === 'Resolved').length;
   const urgent = issues.filter((i) => i.severity === 'High' && i.status !== 'Resolved').length;
   const rate = total ? Math.round((resolved / total) * 100) : 0;
+
+  const timed = issues.filter((i) => i.resolvedAt);
+  const avgDays = timed.length
+    ? timed.reduce(
+        (sum, i) => sum + Math.max(0, (new Date(i.resolvedAt) - new Date(i.createdAt)) / 86400000),
+        0
+      ) / timed.length
+    : null;
 
   const byCategory = CATEGORIES.map((c) => ({
     label: c.name,
@@ -65,8 +78,15 @@ export default function Insights({ issues }) {
         <div className="figures">
           <div><strong>{total}</strong><span>Reports</span></div>
           <div><strong>{urgent}</strong><span>Urgent and still open</span></div>
-          <div><strong>{resolved}</strong><span>Resolved</span></div>
-          <div><strong>{rate}%</strong><span>Resolution rate</span></div>
+          <div><strong>{resolved}</strong><span>Resolved ({rate}% of all reports)</span></div>
+          <div>
+            <strong>{avgDays === null ? 'n/a' : formatDays(avgDays)}</strong>
+            <span>
+              {avgDays === null
+                ? 'Average time to resolve (needs a resolved report)'
+                : `Average time to resolve (${timed.length} ${timed.length === 1 ? 'report' : 'reports'})`}
+            </span>
+          </div>
         </div>
 
         <div className="panels">

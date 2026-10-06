@@ -10,6 +10,10 @@ import IssueDetail from './pages/IssueDetail';
 import Insights from './pages/Insights';
 import ReportProblem from './pages/ReportProblem';
 import AuthPage from './pages/AuthPage';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Privacy from './pages/Privacy';
+import NotFound from './pages/NotFound';
 import { useAuth } from './context/AuthContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import { fetchIssues, fetchMyConfirmations, createIssue, toggleConfirmation } from './lib/api';
@@ -145,8 +149,11 @@ export default function App() {
               }
             />
             <Route path="/insights" element={<Insights issues={issues} />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/login" element={<AuthPage mode="login" />} />
             <Route path="/signup" element={<AuthPage mode="signup" />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route
               path="/report"
               element={
@@ -155,6 +162,7 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         )}
       </main>
