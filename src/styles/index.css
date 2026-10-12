@@ -239,3 +239,19 @@ input, textarea, select {
 .form .consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; }
 .form .consent input { width: auto; margin-top: 5px; }
 .footer-inner a { color: var(--ink); margin-right: 14px; }
+
+/* Photos */
+.field { display: grid; gap: 6px; }
+.field-label { font-weight: 600; }
+.picker-previews { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.preview { position: relative; }
+.preview img { width: 92px; height: 92px; object-fit: cover; border-radius: 10px; border: 2px solid var(--ink); display: block; }
+.preview button { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid var(--ink); background: var(--white); color: var(--ink); font-weight: 700; line-height: 1; cursor: pointer; }
+.thumbs { display: flex; gap: 8px; margin-top: 12px; }
+.thumbs img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 2px solid var(--ink); }
+.photo-block { margin-top: 20px; }
+.photo-block h3 { margin-bottom: 10px; }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.photos figure { margin: 0; }
+.photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; border: 2px solid var(--ink); background: var(--line); display: block; }
+.notice-spaced { margin-top: 16px; }

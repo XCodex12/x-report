@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import MapView from '../components/MapView';
+import PhotoUploader from '../components/PhotoUploader';
 import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
 import { fetchHistory, setIssueStatus } from '../lib/api';
@@ -16,12 +17,28 @@ function formatDateTime(iso) {
   });
 }
 
-export default function IssueDetail({ issues, confirmedIds, onConfirm, onStatusChange }) {
+function PhotoGrid({ photos, caption }) {
+  return (
+    <div className="photos">
+      {photos.map((p, i) => (
+        <figure key={p.id}>
+          <a href={p.url} target="_blank" rel="noreferrer">
+            <img src={p.url} alt={`${caption} photo ${i + 1}`} loading="lazy" />
+          </a>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
+export default function IssueDetail({ issues, confirmedIds, onConfirm, onStatusChange, onPhotosAdded }) {
   const { id } = useParams();
+  const location = useLocation();
   const { user, isAdmin } = useAuth();
   const issue = issues.find((i) => i.id === id);
   const dbId = issue?.dbId;
   const currentStatus = issue?.status;
+  const notice = location.state?.notice;
 
   const [history, setHistory] = useState([]);
   const [historyError, setHistoryError] = useState('');
@@ -63,6 +80,9 @@ export default function IssueDetail({ issues, confirmedIds, onConfirm, onStatusC
   let confirmLabel = 'Confirm';
   if (isOwn) confirmLabel = 'Yours';
   else if (confirmed) confirmLabel = 'Confirmed';
+
+  const reportPhotos = (issue.photos || []).filter((p) => p.kind === 'report');
+  const afterPhotos = (issue.photos || []).filter((p) => p.kind === 'after');
 
   let resolvedDays = null;
   if (issue.resolvedAt) {
@@ -107,6 +127,7 @@ export default function IssueDetail({ issues, confirmedIds, onConfirm, onStatusC
           )}
           {issue.demo && <span className="tag">Sample data</span>}
         </div>
+        {notice && <div className="notice notice-warn notice-spaced" role="status">{notice}</div>}
       </section>
 
       <section className="container detail">
@@ -120,6 +141,43 @@ export default function IssueDetail({ issues, confirmedIds, onConfirm, onStatusC
             <div><dt>Area</dt><dd>{issue.location}</dd></div>
             <div><dt>Reported</dt><dd>{issue.createdAt}</dd></div>
           </dl>
+
+          <h2>Photos</h2>
+          {reportPhotos.length === 0 && afterPhotos.length === 0 && (
+            <p className="fine">No photos have been added yet.</p>
+          )}
+          {reportPhotos.length > 0 && (
+            <div className="photo-block">
+              <h3>{afterPhotos.length > 0 ? 'Before' : 'Reported'}</h3>
+              <PhotoGrid photos={reportPhotos} caption="Reported" />
+            </div>
+          )}
+          {afterPhotos.length > 0 && (
+            <div className="photo-block">
+              <h3>After the fix</h3>
+              <PhotoGrid photos={afterPhotos} caption="Repaired" />
+            </div>
+          )}
+          {isOwn && (
+            <PhotoUploader
+              issue={issue}
+              kind="report"
+              userId={user.id}
+              existing={reportPhotos.length}
+              onAdded={onPhotosAdded}
+              label="Add photos of the problem"
+            />
+          )}
+          {isAdmin && (
+            <PhotoUploader
+              issue={issue}
+              kind="after"
+              userId={user.id}
+              existing={afterPhotos.length}
+              onAdded={onPhotosAdded}
+              label="Add photos of the finished repair"
+            />
+          )}
 
           <h2>Progress</h2>
           {historyError && <div className="notice notice-error">{historyError}</div>}

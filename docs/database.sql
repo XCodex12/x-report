@@ -201,3 +201,64 @@ grant execute on function public.is_admin() to authenticated;
 grant execute on function public.toggle_confirmation(bigint) to authenticated;
 grant execute on function public.my_confirmations() to authenticated;
 grant execute on function public.set_issue_status(bigint, text, text) to authenticated;
+
+-- ---------------------------------------------------------------
+-- 4. Photos
+-- ---------------------------------------------------------------
+
+-- Public bucket: anyone can view a photo if they have its link.
+-- Limits: 5 MB per file, images only.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('report-photos', 'report-photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+-- Signed-in users can only add or remove files inside a folder named after their own user id
+create policy "Signed-in users upload into their own folder"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'report-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users delete their own report photos"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'report-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Which photos belong to which report
+-- kind 'report' = added by the person who reported it ("before")
+-- kind 'after'  = added by an admin once it has been fixed
+create table public.issue_photos (
+  id bigint generated always as identity primary key,
+  issue_id bigint not null references public.issues(id) on delete cascade,
+  user_id uuid references auth.users(id) on delete set null default auth.uid(),
+  kind text not null check (kind in ('report', 'after')),
+  path text not null unique check (char_length(path) <= 200),
+  created_at timestamptz not null default now()
+);
+create index issue_photos_issue_idx on public.issue_photos (issue_id);
+
+alter table public.issue_photos enable row level security;
+grant select on public.issue_photos to anon, authenticated;
+grant insert on public.issue_photos to authenticated;
+
+create policy "Anyone can read photo records"
+  on public.issue_photos for select to anon, authenticated
+  using (true);
+
+create policy "Add photos to your own report, or after-photos as an admin"
+  on public.issue_photos for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and path like auth.uid()::text || '/%'
+    and (
+      select count(*) from public.issue_photos p
+      where p.issue_id = issue_photos.issue_id and p.kind = issue_photos.kind
+    ) < 3
+    and (
+      (kind = 'report' and exists (
+        select 1 from public.issues i
+        where i.id = issue_photos.issue_id and i.user_id = auth.uid()
+      ))
+      or (kind = 'after' and public.is_admin())
+    )
+  );
