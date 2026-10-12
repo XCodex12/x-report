@@ -16,7 +16,13 @@ import Privacy from './pages/Privacy';
 import NotFound from './pages/NotFound';
 import { useAuth } from './context/AuthContext';
 import { isSupabaseConfigured } from './lib/supabaseClient';
-import { fetchIssues, fetchMyConfirmations, createIssue, toggleConfirmation } from './lib/api';
+import {
+  fetchIssues,
+  fetchMyConfirmations,
+  createIssue,
+  toggleConfirmation,
+  uploadPhotos,
+} from './lib/api';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -78,9 +84,27 @@ export default function App() {
     };
   }, [user?.id]);
 
-  async function addIssue(data) {
+  async function addIssue(data, blobs) {
     const created = await createIssue(data);
-    setIssues((current) => [created, ...current]);
+    let photos = [];
+    let photoError = false;
+    if (blobs && blobs.length > 0) {
+      try {
+        photos = await uploadPhotos(created.dbId, 'report', blobs, user.id);
+      } catch (err) {
+        console.error(err);
+        photoError = true;
+        photos = err.saved || [];
+      }
+    }
+    setIssues((current) => [{ ...created, photos }, ...current]);
+    return { id: created.id, photoError };
+  }
+
+  function addPhotos(id, saved) {
+    setIssues((current) =>
+      current.map((i) => (i.id === id ? { ...i, photos: [...(i.photos || []), ...saved] } : i))
+    );
   }
 
   function applyConfirmation(id, confirmed, count) {
@@ -145,6 +169,7 @@ export default function App() {
                   confirmedIds={confirmedIds}
                   onConfirm={confirmIssue}
                   onStatusChange={changeStatus}
+                  onPhotosAdded={addPhotos}
                 />
               }
             />

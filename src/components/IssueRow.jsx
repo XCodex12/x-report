@@ -5,6 +5,7 @@ import { categoryMeta, STATUSES } from '../utils/constants';
 export default function IssueRow({ issue, confirmed, isOwn, onConfirm }) {
   const meta = categoryMeta(issue.category);
   const step = STATUSES.indexOf(issue.status);
+  const thumbs = (issue.photos || []).filter((p) => p.kind === 'report');
 
   let label = 'Confirm';
   if (isOwn) label = 'Yours';
@@ -31,6 +32,15 @@ export default function IssueRow({ issue, confirmed, isOwn, onConfirm }) {
           <StatusBadge status={issue.status} />
         </div>
         <p>{issue.description}</p>
+
+        {thumbs.length > 0 && (
+          <Link to={'/issues/' + issue.id} className="thumbs" aria-label="View photos of this problem">
+            {thumbs.map((p) => (
+              <img key={p.id} src={p.url} alt="" loading="lazy" />
+            ))}
+          </Link>
+        )}
+
         <dl className="facts">
           <div><dt>Report</dt><dd>{issue.id}</dd></div>
           <div><dt>Type</dt><dd>{issue.category}</dd></div>

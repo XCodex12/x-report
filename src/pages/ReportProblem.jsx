@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MapView from '../components/MapView';
+import PhotoPicker from '../components/PhotoPicker';
 import { CATEGORIES, SEVERITIES } from '../utils/constants';
 import { distanceMeters } from '../utils/geo';
+import { compressImage } from '../utils/image';
 
 export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConfirm }) {
   const [form, setForm] = useState({
@@ -13,6 +15,7 @@ export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConf
     location: '',
   });
   const [picked, setPicked] = useState(null);
+  const [photoFiles, setPhotoFiles] = useState([]);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -65,18 +68,38 @@ export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConf
       setError('Click the map to place a pin where the problem is.');
       return;
     }
+
     setSubmitting(true);
     setError('');
+
+    let blobs = [];
     try {
-      await onAddIssue({
-        ...form,
-        title,
-        description,
-        location: form.location.trim().slice(0, 120) || 'Pinned location',
-        lat: picked.lat,
-        lng: picked.lng,
-      });
-      navigate('/issues');
+      blobs = await Promise.all(photoFiles.map((f) => compressImage(f)));
+    } catch (err) {
+      setError(err.message || 'One of the photos could not be processed.');
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      const result = await onAddIssue(
+        {
+          ...form,
+          title,
+          description,
+          location: form.location.trim().slice(0, 120) || 'Pinned location',
+          lat: picked.lat,
+          lng: picked.lng,
+        },
+        blobs
+      );
+      if (result.photoError) {
+        navigate('/issues/' + result.id, {
+          state: { notice: 'Your report was saved, but the photos could not be uploaded. You can add them again below.' },
+        });
+      } else {
+        navigate('/issues');
+      }
     } catch (err) {
       console.error(err);
       setError('Could not submit your report. Check your connection and try again.');
@@ -124,6 +147,11 @@ export default function ReportProblem({ issues, confirmedIds, onAddIssue, onConf
             Area or landmark <span className="hint">(optional)</span>
             <input name="location" value={form.location} onChange={handleChange} placeholder="Next to the Spar, Durban North" />
           </label>
+
+          <div className="field">
+            <span className="field-label">Photos <span className="hint">(optional)</span></span>
+            <PhotoPicker files={photoFiles} onChange={setPhotoFiles} disabled={submitting} />
+          </div>
 
           {nearby.length > 0 && (
             <div className="notice notice-warn">

@@ -1,5 +1,15 @@
 import { supabase } from './supabaseClient';
 
+const BUCKET = 'report-photos';
+
+export function photoUrl(path) {
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+function mapPhoto(p) {
+  return { id: p.id, kind: p.kind, url: photoUrl(p.path) };
+}
+
 function fromRow(r) {
   return {
     id: 'XR-' + r.id,
@@ -17,13 +27,14 @@ function fromRow(r) {
     createdAt: r.created_at.slice(0, 10),
     resolvedAt: r.resolved_at,
     demo: r.is_demo,
+    photos: (r.issue_photos || []).slice().sort((a, b) => a.id - b.id).map(mapPhoto),
   };
 }
 
 export async function fetchIssues() {
   const { data, error } = await supabase
     .from('issues')
-    .select('*')
+    .select('*, issue_photos(id, kind, path)')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data.map(fromRow);
@@ -77,4 +88,34 @@ export async function setIssueStatus(dbId, status, note) {
     p_note: note || null,
   });
   if (error) throw error;
+}
+
+// Uploads already-compressed images and records them against a report.
+// If something fails part-way, the photos that did save are attached to the error as err.saved.
+export async function uploadPhotos(dbId, kind, blobs, userId) {
+  const saved = [];
+  try {
+    for (const blob of blobs) {
+      const path = `${userId}/${crypto.randomUUID()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data, error: rowError } = await supabase
+        .from('issue_photos')
+        .insert({ issue_id: dbId, kind, path })
+        .select('id, kind, path')
+        .single();
+      if (rowError) {
+        await supabase.storage.from(BUCKET).remove([path]);
+        throw rowError;
+      }
+      saved.push(mapPhoto(data));
+    }
+  } catch (err) {
+    err.saved = saved;
+    throw err;
+  }
+  return saved;
 }
