@@ -5,10 +5,11 @@ import { STATUSES, STATUS_COLORS, STATUS_NOTES } from '../utils/constants';
 const FEATURES = [
   { name: 'Live map', text: 'See every open problem near you, colour-coded by type.', state: 'live' },
   { name: 'Duplicate check', text: 'Pin a problem and we warn you if the same one is already reported within 200 m.', state: 'live' },
+  { name: 'Accounts', text: 'Sign in so reports and confirmations belong to real people.', state: 'live' },
   { name: 'Neighbour confirmation', text: 'Confirm a report you can see for yourself. More confirmations, more credibility.', state: 'live' },
-  { name: 'Insights', text: 'Totals, problem types and the areas with the most reports.', state: 'live' },
-  { name: 'Photo evidence', text: 'Attach photos, and show before and after when a repair is done.', state: 'planned' },
-  { name: 'Accounts', text: 'Sign in so reports and confirmations belong to real people.', state: 'planned' },
+  { name: 'Status timeline', text: 'Every change from reported to resolved is recorded with a date and a note.', state: 'live' },
+  { name: 'Photo evidence', text: 'Attach photos, and show before and after when a repair is done.', state: 'live' },
+  { name: 'Insights', text: 'Totals, problem types, top areas and how long fixes take.', state: 'live' },
   { name: 'AI suggestions', text: 'Suggest a type and severity from a photo of the problem.', state: 'planned' },
   { name: 'Hotspot prediction', text: 'Flag areas where reports are rising before they become a crisis.', state: 'planned' },
 ];
@@ -41,10 +42,16 @@ export default function Home({ issues }) {
       </section>
 
       <section className="container now">
-        <p className="now-line">
-          Right now: <strong>{count(open, 'problem')}</strong> open, <strong>{fixed}</strong> fixed,
-          and <strong>{count(confirmations, 'confirmation')}</strong> from neighbours.
-        </p>
+        {issues.length === 0 ? (
+          <p className="now-line">
+            No problems have been reported yet. <strong>Be the first</strong> to put one on the map.
+          </p>
+        ) : (
+          <p className="now-line">
+            Right now: <strong>{count(open, 'problem')}</strong> open, <strong>{fixed}</strong> fixed,
+            and <strong>{count(confirmations, 'confirmation')}</strong> from neighbours.
+          </p>
+        )}
         {isDemo && (
           <p className="fine">
             Some of the reports shown are sample data for Durban. Reports you add are real and

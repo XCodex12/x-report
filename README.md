@@ -6,11 +6,12 @@
 
 > **Status:** early development. The core loop works end to end: people report problems on a map, neighbours confirm them, and admins move them through a public status timeline. Items under "Planned" are not built yet.
 
-<!--
-Add screenshots here once you have taken them, for example:
-![Home page](docs/screenshots/home.png)
-![Report detail and timeline](docs/screenshots/detail.png)
--->
+![Home page with the live map](docs/screenshots/home.png)
+![Problem list with photos](docs/screenshots/issues.png)
+![Report detail with before and after photos and status timeline](docs/screenshots/detail.png)
+![Insights dashboard](docs/screenshots/insights.png)
+
+*Screenshots use sample data.*
 
 ---
 
@@ -39,13 +40,13 @@ A report has a type, severity, map pin and description. Neighbours confirm it, a
 - Neighbour confirmations, one per account, never on your own report
 - Problem list with search, filters and sorting, and an "only my reports" view
 - Detail page per report with a status timeline and notes
+- Photo upload (up to 3 per report, resized in the browser with location data removed), plus admin "after" photos for before/after evidence
 - Admin role for updating statuses; resolution time is recorded automatically
 - Insights page: totals, types, statuses, severity, top areas, average time to resolve
 - Privacy policy page
 
 **Planned**
 
-- Photo upload and before/after evidence
 - AI suggestions for type and severity from a photo
 - Hotspot detection and trend prediction
 - Notifications
@@ -57,7 +58,7 @@ A report has a type, severity, map pin and description. Neighbours confirm it, a
 | Layer | Technology |
 | --- | --- |
 | Frontend | React, Vite, React Router, Leaflet |
-| Backend | Supabase (PostgreSQL, Auth, Row Level Security, database functions) |
+| Backend | Supabase (PostgreSQL, Auth, Storage, Row Level Security, database functions) |
 | Hosting | Netlify, deployed automatically from `main` |
 | Maps | OpenStreetMap tiles |
 
@@ -133,9 +134,10 @@ x-report/
 - [x] **v1:** report a problem, issue list, statuses
 - [x] **v2:** live map, duplicate check, confirmations, shared database
 - [x] **v3:** accounts, detail page with timeline, admin status updates, insights
-- [ ] **v4:** photo upload, before/after evidence, custom email sending
-- [ ] **v5:** AI suggestions, hotspot prediction, notifications
-- [ ] **v6:** organisation accounts, public API, PWA
+- [x] **v4:** photo upload, before/after evidence, privacy policy, password reset
+- [ ] **v5:** custom email sending and a first real launch with local users
+- [ ] **v6:** AI suggestions, hotspot prediction, notifications
+- [ ] **v7:** organisation accounts, public API, PWA
 
 ## License
 
